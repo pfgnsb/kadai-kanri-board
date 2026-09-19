@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>課題管理ボード</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <input
+        id="board-title"
+        class="board-title"
+        type="text"
+        maxlength="40"
+        aria-label="ボード名"
+      />
+      <p class="topbar-note">内容はこのブラウザに自動で保存されます</p>
+    </header>
+
+    <main id="board" class="board" aria-label="タスクボード"></main>
+
+    <dialog id="card-dialog" class="dialog">
+      <form id="card-form" class="dialog-form" method="dialog">
+        <h2>カードを編集</h2>
+
+        <label>
+          タイトル（必須）
+          <input id="card-title" type="text" required maxlength="80" />
+        </label>
+
+        <label>
+          説明文
+          <textarea id="card-description" rows="4" maxlength="500"></textarea>
+        </label>
+
+        <label>
+          優先度
+          <select id="card-priority">
+            <option value="high">高</option>
+            <option value="medium">中</option>
+            <option value="low">低</option>
+          </select>
+        </label>
+
+        <label>
+          期限（任意）
+          <input id="card-due" type="date" />
+        </label>
+
+        <p id="form-error" class="form-error" hidden>タイトルを入力してください。</p>
+
+        <div class="dialog-actions">
+          <button type="submit" class="btn btn-primary">保存</button>
+          <button type="button" id="cancel-edit" class="btn">キャンセル</button>
+          <button type="button" id="delete-card" class="btn btn-danger">削除</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>
