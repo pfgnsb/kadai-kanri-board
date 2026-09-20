@@ -86,6 +86,12 @@ function isOverdue(dueDate) {
   return new Date(`${dueDate}T00:00:00`) < today;
 }
 
+function formatDueDate(dueDate) {
+  const [year, month, day] = dueDate.split("-");
+  if (!year || !month || !day) return dueDate;
+  return `${Number(year)}年${Number(month)}月${Number(day)}日`;
+}
+
 function render() {
   boardTitleEl.value = board.title;
   boardEl.innerHTML = board.lists.map(renderList).join("") + renderAddList();
@@ -113,7 +119,7 @@ function renderList(list, index) {
 
 function renderCard(list, card, listIndex) {
   const due = card.dueDate
-    ? `<span class="due ${isOverdue(card.dueDate) ? "overdue" : ""}">期限 ${escapeHtml(card.dueDate)}</span>`
+    ? `<span class="due ${isOverdue(card.dueDate) ? "overdue" : ""}">期限 ${escapeHtml(formatDueDate(card.dueDate))}</span>`
     : "";
   const preview = card.description
     ? `<p class="card-preview">${escapeHtml(card.description)}</p>`
