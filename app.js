@@ -1,5 +1,7 @@
 const STORAGE_KEY = "task-board-v1";
 const PRIORITY_LABEL = { high: "高", medium: "中", low: "低" };
+const PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
+const DRAG_THRESHOLD = 8;
 
 const boardEl = document.getElementById("board");
 const boardTitleEl = document.getElementById("board-title");
@@ -17,6 +19,8 @@ let board = loadBoard();
 let composingListId = null;
 let addingList = false;
 let editing = null;
+let drag = null;
+let justDragged = false;
 
 function createId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -111,6 +115,10 @@ function renderList(list, index) {
         <input class="list-title" data-action="rename-list" data-list-id="${list.id}" value="${escapeHtml(list.title)}" maxlength="30" aria-label="列の名前" />
         <button class="icon-btn" data-action="delete-list" data-list-id="${list.id}" title="列を削除">削除</button>
       </div>
+      <div class="list-sort">
+        <button type="button" class="btn" data-action="sort-priority" data-list-id="${list.id}" title="高い順に並べる。そのあとも自由に動かせます">優先度順</button>
+        <button type="button" class="btn" data-action="sort-due" data-list-id="${list.id}" title="早い期限順に並べる。期限なしは下へ。そのあとも自由に動かせます">期限順</button>
+      </div>
       <div class="cards">${cards}</div>
       <div class="add-card">${composer}</div>
     </section>
@@ -126,7 +134,7 @@ function renderCard(list, card, listIndex) {
     : "";
 
   return `
-    <article class="card" data-action="open-card" data-list-id="${list.id}" data-card-id="${card.id}">
+    <article class="card" data-action="open-card" data-list-id="${list.id}" data-card-id="${card.id}" title="ドラッグして並べ替え。クリックで編集">
       <p class="card-title">${escapeHtml(card.title)}</p>
       <div class="card-meta">
         <span class="badge badge-${card.priority}">優先度 ${PRIORITY_LABEL[card.priority]}</span>
@@ -189,6 +197,16 @@ boardTitleEl.addEventListener("change", () => {
 
 boardEl.addEventListener("click", (event) => {
   const target = event.target.closest("[data-action]");
+
+  if (justDragged) {
+    justDragged = false;
+    if (!target || target.dataset.action === "open-card") {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+  }
+
   if (!target) return;
 
   const action = target.dataset.action;
@@ -240,6 +258,16 @@ boardEl.addEventListener("click", (event) => {
   if (action === "move-left" || action === "move-right") {
     event.stopPropagation();
     moveCard(listId, cardId, action === "move-left" ? -1 : 1);
+    return;
+  }
+
+  if (action === "sort-priority") {
+    sortList(listId, "priority");
+    return;
+  }
+
+  if (action === "sort-due") {
+    sortList(listId, "due");
   }
 });
 
@@ -350,5 +378,187 @@ function moveCard(listId, cardId, direction) {
   board.lists[toIndex].cards.push(card);
   persistAndRender();
 }
+
+function sortList(listId, mode) {
+  const list = findList(listId);
+  if (!list || list.cards.length < 2) return;
+
+  if (mode === "priority") {
+    list.cards.sort(
+      (a, b) => (PRIORITY_RANK[a.priority] ?? 1) - (PRIORITY_RANK[b.priority] ?? 1)
+    );
+  } else if (mode === "due") {
+    list.cards.sort((a, b) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return a.dueDate.localeCompare(b.dueDate);
+    });
+  }
+
+  persistAndRender();
+}
+
+function relocateCard(fromListId, cardId, toListId, toIndex) {
+  const fromList = findList(fromListId);
+  const toList = findList(toListId);
+  if (!fromList || !toList) return false;
+
+  const fromIndex = fromList.cards.findIndex((card) => card.id === cardId);
+  if (fromIndex < 0) return false;
+  if (fromListId === toListId && toIndex === fromIndex) return false;
+
+  const [card] = fromList.cards.splice(fromIndex, 1);
+  const insertAt = Math.max(0, Math.min(toIndex, toList.cards.length));
+  toList.cards.splice(insertAt, 0, card);
+  return true;
+}
+
+function isInteractiveTarget(target) {
+  return Boolean(target.closest("button, input, textarea, select, a, label"));
+}
+
+function getPlaceholder() {
+  let placeholder = document.getElementById("card-placeholder");
+  if (placeholder) return placeholder;
+  placeholder = document.createElement("div");
+  placeholder.id = "card-placeholder";
+  placeholder.className = "card-placeholder";
+  placeholder.setAttribute("aria-hidden", "true");
+  return placeholder;
+}
+
+function startDrag(event) {
+  const cardEl = boardEl.querySelector(`.card[data-card-id="${drag.cardId}"]`);
+  if (!cardEl) return;
+
+  const rect = cardEl.getBoundingClientRect();
+  drag.started = true;
+  drag.offsetX = event.clientX - rect.left;
+  drag.offsetY = event.clientY - rect.top;
+
+  const ghost = cardEl.cloneNode(true);
+  ghost.classList.add("card-ghost");
+  ghost.removeAttribute("data-action");
+  ghost.style.width = `${rect.width}px`;
+  ghost.style.left = `${rect.left}px`;
+  ghost.style.top = `${rect.top}px`;
+  document.body.appendChild(ghost);
+  drag.ghost = ghost;
+
+  const placeholder = getPlaceholder();
+  placeholder.style.height = `${rect.height}px`;
+  cardEl.insertAdjacentElement("afterend", placeholder);
+  cardEl.classList.add("card-origin");
+
+  document.body.classList.add("is-dragging");
+}
+
+function getDropTarget(event) {
+  const el = document.elementFromPoint(event.clientX, event.clientY);
+  const listEl = el?.closest(".list");
+  if (!listEl) return null;
+
+  const cardsEl = listEl.querySelector(".cards");
+  if (!cardsEl) return null;
+
+  const cards = [...cardsEl.querySelectorAll(".card:not(.card-origin)")];
+  let index = cards.length;
+  for (let i = 0; i < cards.length; i += 1) {
+    const rect = cards[i].getBoundingClientRect();
+    if (event.clientY < rect.top + rect.height / 2) {
+      index = i;
+      break;
+    }
+  }
+
+  return { listId: listEl.dataset.listId, index, cardsEl, cards };
+}
+
+function updateDrag(event) {
+  if (!drag.ghost) return;
+  drag.ghost.style.left = `${event.clientX - drag.offsetX}px`;
+  drag.ghost.style.top = `${event.clientY - drag.offsetY}px`;
+
+  const target = getDropTarget(event);
+  if (!target) return;
+
+  const placeholder = getPlaceholder();
+  const before = target.cards[target.index] || null;
+  if (before) {
+    if (placeholder.nextElementSibling !== before || placeholder.parentElement !== target.cardsEl) {
+      target.cardsEl.insertBefore(placeholder, before);
+    }
+  } else if (placeholder.parentElement !== target.cardsEl || placeholder.nextElementSibling) {
+    target.cardsEl.appendChild(placeholder);
+  }
+
+  drag.drop = { listId: target.listId, index: target.index };
+}
+
+function endDrag() {
+  window.removeEventListener("pointermove", onPointerMove);
+  window.removeEventListener("pointerup", onPointerUp);
+  window.removeEventListener("pointercancel", onPointerUp);
+
+  const current = drag;
+  drag = null;
+  if (!current) return;
+
+  if (!current.started) return;
+
+  justDragged = true;
+  window.setTimeout(() => {
+    justDragged = false;
+  }, 80);
+  current.ghost?.remove();
+  document.getElementById("card-placeholder")?.remove();
+  document.body.classList.remove("is-dragging");
+  boardEl.querySelector(".card-origin")?.classList.remove("card-origin");
+
+  if (current.drop && relocateCard(current.listId, current.cardId, current.drop.listId, current.drop.index)) {
+    persistAndRender();
+  }
+}
+
+function onPointerMove(event) {
+  if (!drag || event.pointerId !== drag.pointerId) return;
+  const distance = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
+  if (!drag.started) {
+    if (distance < DRAG_THRESHOLD) return;
+    startDrag(event);
+  }
+  event.preventDefault();
+  updateDrag(event);
+}
+
+function onPointerUp(event) {
+  if (drag && event.pointerId !== drag.pointerId) return;
+  endDrag();
+}
+
+boardEl.addEventListener("pointerdown", (event) => {
+  if (event.button !== 0) return;
+  if (isInteractiveTarget(event.target)) return;
+  const card = event.target.closest(".card");
+  if (!card) return;
+
+  drag = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    listId: card.dataset.listId,
+    cardId: card.dataset.cardId,
+    started: false,
+    ghost: null,
+    drop: null,
+    offsetX: 0,
+    offsetY: 0,
+  };
+
+  window.addEventListener("pointermove", onPointerMove, { passive: false });
+  window.addEventListener("pointerup", onPointerUp);
+  window.addEventListener("pointercancel", onPointerUp);
+});
 
 render();

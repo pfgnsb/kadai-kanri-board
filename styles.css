@@ -86,7 +86,24 @@ body {
   display: flex;
   gap: 8px;
   align-items: center;
+  margin-bottom: 6px;
+}
+
+.list-sort {
+  display: flex;
+  gap: 6px;
   margin-bottom: 8px;
+}
+
+.list-sort .btn {
+  flex: 1;
+  padding: 4px 6px;
+  font-size: 12px;
+  background: #fff;
+}
+
+.list-sort .btn:hover {
+  background: #dce3e8;
 }
 
 .list-title {
@@ -124,8 +141,13 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-height: 16px;
+  min-height: 48px;
+  flex: 1;
   padding-bottom: 4px;
+}
+
+.cards:has(.card-placeholder) .empty-hint {
+  display: none;
 }
 
 .card {
@@ -133,12 +155,13 @@ body {
   border-radius: 10px;
   padding: 10px 12px;
   box-shadow: 0 1px 0 rgba(9, 30, 66, 0.18);
-  cursor: pointer;
+  cursor: grab;
   text-align: left;
   border: 0;
   width: 100%;
   color: inherit;
   font: inherit;
+  touch-action: none;
 }
 
 .card:hover {
@@ -221,6 +244,36 @@ body {
 .card-move button:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+.card-origin {
+  display: none;
+}
+
+.card-placeholder {
+  border-radius: 10px;
+  background: rgba(9, 30, 66, 0.08);
+  border: 2px dashed rgba(9, 30, 66, 0.18);
+  flex-shrink: 0;
+}
+
+.card-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  margin: 0;
+  pointer-events: none;
+  rotate: 3deg;
+  box-shadow: var(--shadow);
+  opacity: 0.96;
+  cursor: grabbing;
+}
+
+body.is-dragging,
+body.is-dragging .card {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .add-card,
