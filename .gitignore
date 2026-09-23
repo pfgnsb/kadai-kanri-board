@@ -2,6 +2,7 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 preview.png
+.env
 
 backend/target/
 .idea/
