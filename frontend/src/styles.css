@@ -82,6 +82,21 @@ body {
   margin-bottom: 6px;
 }
 
+.icon-btn {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.icon-btn:hover {
+  background: #dce3e8;
+  color: var(--text);
+}
+
 .list-title {
   flex: 1;
   margin: 0;
@@ -346,4 +361,20 @@ body.is-dragging .card {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.btn-danger {
+  background: #f8d7da;
+  color: #842029;
+  margin-left: auto;
+}
+
+.confirm-dialog {
+  width: min(420px, calc(100vw - 32px));
+  padding: 20px;
+}
+
+.confirm-message {
+  margin: 0;
+  line-height: 1.6;
 }

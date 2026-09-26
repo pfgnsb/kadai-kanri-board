@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import CardView from "./CardView.jsx";
 
-export default function ListColumn({ list, onOpenCard, onCreateCard }) {
+export default function ListColumn({ list, onOpenCard, onCreateCard, onDeleteList }) {
   return (
     <section className="list" data-list-id={list.id}>
       <div className="list-header">
         <h2 className="list-title">{list.title}</h2>
+        <button type="button" className="icon-btn" onClick={() => onDeleteList(list)}>
+          削除
+        </button>
       </div>
       <div className="cards">
         {list.cards.length === 0 ? (

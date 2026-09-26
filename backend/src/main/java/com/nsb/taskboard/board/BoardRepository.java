@@ -227,6 +227,14 @@ public class BoardRepository {
 		}
 	}
 
+	public boolean deleteList(UUID listId) {
+		return jdbcTemplate.update("DELETE FROM lists WHERE id = ?", listId) > 0;
+	}
+
+	public boolean deleteCard(UUID cardId) {
+		return jdbcTemplate.update("DELETE FROM cards WHERE id = ?", cardId) > 0;
+	}
+
 	public boolean cardExists(UUID cardId) {
 		Integer count = jdbcTemplate.queryForObject(
 			"SELECT COUNT(*) FROM cards WHERE id = ?",

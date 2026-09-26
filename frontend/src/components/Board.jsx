@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useCardDrag } from "../useCardDrag.js";
 import CardEditor from "./CardEditor.jsx";
+import ConfirmDialog from "./ConfirmDialog.jsx";
 import ListColumn from "./ListColumn.jsx";
 
 export default function Board({
@@ -12,6 +13,11 @@ export default function Board({
   onOpenCard,
   onPlaceCard,
   onSaveCard,
+  onDeleteCard,
+  onDeleteList,
+  confirm,
+  onConfirmYes,
+  onConfirmNo,
   onCloseEditor,
 }) {
   const boardRef = useRef(null);
@@ -31,12 +37,21 @@ export default function Board({
             list={list}
             onOpenCard={onOpenCard}
             onCreateCard={onCreateCard}
+            onDeleteList={onDeleteList}
           />
         ))}
         <AddList onCreate={onCreateList} />
       </main>
       {editingCard ? (
-        <CardEditor card={editingCard} onSave={onSaveCard} onClose={onCloseEditor} />
+        <CardEditor card={editingCard} onSave={onSaveCard} onDelete={onDeleteCard} onClose={onCloseEditor} />
+      ) : null}
+      {confirm ? (
+        <ConfirmDialog
+          message={confirm.message}
+          pending={confirm.pending}
+          onYes={onConfirmYes}
+          onNo={onConfirmNo}
+        />
       ) : null}
     </>
   );
