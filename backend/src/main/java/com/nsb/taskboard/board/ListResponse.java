@@ -9,4 +9,7 @@ public record ListResponse(
 	int position,
 	List<CardResponse> cards
 ) {
+	public ListResponse {
+		cards = List.copyOf(cards);
+	}
 }
