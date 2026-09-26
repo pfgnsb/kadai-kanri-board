@@ -1,0 +1,22 @@
+---
+description: バックエンドとフロントエンドは指定ポートだけで起動する
+alwaysApply: true
+---
+
+# サーバのポート
+
+起動するポートは、アプリに書いてある番号だけを使う。空いている別のポートへ移して起動しない。
+
+| サーバ | 設定 | ポート |
+|---|---|---|
+| バックエンド（Spring Boot） | `backend/src/main/resources/application.properties` の `server.port` | 8080 |
+| フロントエンド（Vite） | `frontend/vite.config.js` の `server.port` | 5173 |
+
+ポートが使用中のときは、そのポートを待っているプロセスを止めてから、同じ番号で起動し直す。
+
+```powershell
+$conn = Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($conn) { Stop-Process -Id $conn.OwningProcess -Force }
+```
+
+フロントエンドの 5173 も同じ手順で空ける。`strictPort` を外したり、5174 など別番号で一時起動したりしない。
