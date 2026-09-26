@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlParameterValue;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -166,39 +167,64 @@ public class BoardRepository {
 		return Optional.of(updated.get(0));
 	}
 
-	public Optional<MoveCardResponse> moveCard(UUID cardId, int direction) {
-		List<MoveCardResponse> moved = jdbcTemplate.query(
-			"""
-			UPDATE cards AS card
-			SET list_id = neighbor.id,
-				position = COALESCE((
-					SELECT MAX(existing.position) FROM cards existing WHERE existing.list_id = neighbor.id
-				), -1) + 1,
-				updated_at = CURRENT_TIMESTAMP
-			FROM (
-				SELECT next_list.id
-				FROM cards current_card
-				JOIN lists current_list ON current_list.id = current_card.list_id
-				JOIN lists next_list ON next_list.board_id = current_list.board_id
-					AND next_list.position = current_list.position + ?
-				WHERE current_card.id = ?
-			) AS neighbor
-			WHERE card.id = ?
-			RETURNING card.id, card.list_id, card.position
-			""",
-			(rs, rowNum) -> new MoveCardResponse(
-				rs.getObject("id", UUID.class),
-				rs.getObject("list_id", UUID.class),
-				rs.getInt("position")
-			),
-			direction,
-			cardId,
+	@Transactional
+	public Optional<MoveCardResponse> placeCard(UUID cardId, UUID targetListId, int index) {
+		List<UUID> sourceListIds = jdbcTemplate.query(
+			"SELECT list_id FROM cards WHERE id = ?",
+			(rs, rowNum) -> rs.getObject("list_id", UUID.class),
 			cardId
 		);
-		if (moved.isEmpty()) {
+		if (sourceListIds.isEmpty()) {
 			return Optional.empty();
 		}
-		return Optional.of(moved.get(0));
+		Integer targetLists = jdbcTemplate.queryForObject(
+			"SELECT COUNT(*) FROM lists WHERE id = ?",
+			Integer.class,
+			targetListId
+		);
+		if (targetLists == null || targetLists == 0) {
+			return Optional.empty();
+		}
+
+		UUID sourceListId = sourceListIds.get(0);
+		List<UUID> sourceIds = cardIds(sourceListId);
+		int fromIndex = sourceIds.indexOf(cardId);
+		sourceIds.remove(cardId);
+		List<UUID> targetIds = sourceListId.equals(targetListId) ? sourceIds : cardIds(targetListId);
+		int insertAt = Math.min(Math.max(index, 0), targetIds.size());
+		if (sourceListId.equals(targetListId) && insertAt == fromIndex) {
+			return Optional.of(new MoveCardResponse(cardId, targetListId, fromIndex));
+		}
+
+		targetIds.add(insertAt, cardId);
+		if (!sourceListId.equals(targetListId)) {
+			writePositions(sourceIds);
+			jdbcTemplate.update(
+				"UPDATE cards SET list_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+				targetListId,
+				cardId
+			);
+		}
+		writePositions(targetIds);
+		return Optional.of(new MoveCardResponse(cardId, targetListId, insertAt));
+	}
+
+	private List<UUID> cardIds(UUID listId) {
+		return new ArrayList<>(jdbcTemplate.query(
+			"SELECT id FROM cards WHERE list_id = ? ORDER BY position, created_at",
+			(rs, rowNum) -> rs.getObject("id", UUID.class),
+			listId
+		));
+	}
+
+	private void writePositions(List<UUID> cardIds) {
+		for (int position = 0; position < cardIds.size(); position++) {
+			jdbcTemplate.update(
+				"UPDATE cards SET position = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+				position,
+				cardIds.get(position)
+			);
+		}
 	}
 
 	public boolean cardExists(UUID cardId) {

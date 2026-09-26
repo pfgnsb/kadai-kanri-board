@@ -7,7 +7,6 @@ export default function App() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [editingCard, setEditingCard] = useState(null);
-  const [movingCardId, setMovingCardId] = useState("");
   const [actionError, setActionError] = useState("");
 
   useEffect(() => {
@@ -73,16 +72,22 @@ export default function App() {
     setEditingCard(null);
   }
 
-  async function handleMoveCard(cardId, direction) {
+  async function handlePlaceCard(cardId, listId, index) {
+    const next = placeCardOnBoard(board, cardId, listId, index);
+    if (!next) {
+      return;
+    }
     setActionError("");
-    setMovingCardId(cardId);
+    setBoard(next);
     try {
-      const moved = await moveCard(cardId, direction);
-      setBoard((current) => moveCardOnBoard(current, cardId, moved));
+      await moveCard(cardId, listId, index);
     } catch (err) {
       setActionError(err.message || "カードを移動できませんでした。");
-    } finally {
-      setMovingCardId("");
+      try {
+        setBoard(await fetchBoard());
+      } catch {
+        // 移動に失敗したあと、読み直しも失敗したときは今の表示を残す。
+      }
     }
   }
 
@@ -90,39 +95,53 @@ export default function App() {
     <Board
       board={board}
       actionError={actionError}
-      movingCardId={movingCardId}
       editingCard={editingCard}
       onCreateList={handleCreateList}
       onCreateCard={handleCreateCard}
       onOpenCard={setEditingCard}
-      onMoveCard={handleMoveCard}
+      onPlaceCard={handlePlaceCard}
       onSaveCard={handleSaveCard}
       onCloseEditor={() => setEditingCard(null)}
     />
   );
 }
 
-function moveCardOnBoard(board, cardId, moved) {
+function placeCardOnBoard(board, cardId, listId, index) {
+  let fromListId = null;
+  let fromIndex = -1;
   let moving = null;
+  for (const list of board.lists) {
+    const found = list.cards.findIndex((card) => card.id === cardId);
+    if (found >= 0) {
+      fromListId = list.id;
+      fromIndex = found;
+      moving = list.cards[found];
+      break;
+    }
+  }
+  if (!moving || !board.lists.some((list) => list.id === listId)) {
+    return null;
+  }
+  if (fromListId === listId && index === fromIndex) {
+    return null;
+  }
   const withoutCard = board.lists.map((list) => ({
     ...list,
-    cards: list.cards.filter((card) => {
-      if (card.id !== cardId) {
-        return true;
-      }
-      moving = card;
-      return false;
-    }),
+    cards: list.cards.filter((card) => card.id !== cardId),
   }));
-  if (!moving) {
-    return board;
-  }
   return {
     ...board,
-    lists: withoutCard.map((list) =>
-      list.id === moved.listId
-        ? { ...list, cards: [...list.cards, { ...moving, position: moved.position }] }
-        : list
-    ),
+    lists: withoutCard.map((list) => {
+      if (list.id !== listId) {
+        return list;
+      }
+      const cards = [...list.cards];
+      const insertAt = Math.max(0, Math.min(index, cards.length));
+      cards.splice(insertAt, 0, moving);
+      return {
+        ...list,
+        cards: cards.map((card, position) => ({ ...card, position })),
+      };
+    }),
   };
 }

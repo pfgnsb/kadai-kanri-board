@@ -1,17 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import CardView from "./CardView.jsx";
 
-export default function ListColumn({
-  list,
-  canMoveLeft,
-  canMoveRight,
-  movingCardId,
-  onOpenCard,
-  onMoveCard,
-  onCreateCard,
-}) {
+export default function ListColumn({ list, onOpenCard, onCreateCard }) {
   return (
-    <section className="list">
+    <section className="list" data-list-id={list.id}>
       <div className="list-header">
         <h2 className="list-title">{list.title}</h2>
       </div>
@@ -20,15 +12,7 @@ export default function ListColumn({
           <p className="empty-hint">カードはまだありません</p>
         ) : (
           list.cards.map((card) => (
-            <CardView
-              key={card.id}
-              card={card}
-              canMoveLeft={canMoveLeft}
-              canMoveRight={canMoveRight}
-              pending={movingCardId === card.id}
-              onOpen={() => onOpenCard(card)}
-              onMove={(direction) => onMoveCard(card.id, direction)}
-            />
+            <CardView key={card.id} card={card} listId={list.id} onOpen={() => onOpenCard(card)} />
           ))
         )}
       </div>

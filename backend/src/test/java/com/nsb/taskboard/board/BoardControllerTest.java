@@ -241,56 +241,58 @@ class BoardControllerTest {
 	}
 
 	@Test
-	void moveCardToTheRight() throws Exception {
+	void moveCardPlacesAtIndex() throws Exception {
 		UUID cardId = UUID.fromString("11111111-1111-4111-8111-111111111131");
 		UUID listId = UUID.fromString("11111111-1111-4111-8111-111111111122");
-		when(boardRepository.moveCard(cardId, 1)).thenReturn(Optional.of(new MoveCardResponse(cardId, listId, 1)));
+		when(boardRepository.placeCard(cardId, listId, 0)).thenReturn(Optional.of(new MoveCardResponse(cardId, listId, 0)));
 
 		mockMvc.perform(post("/api/cards/" + cardId + "/move")
 				.contentType(APPLICATION_JSON)
-				.content("{\"direction\":\"right\"}"))
+				.content("{\"listId\":\"" + listId + "\",\"index\":0}"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.listId").value(listId.toString()))
-			.andExpect(jsonPath("$.position").value(1));
+			.andExpect(jsonPath("$.position").value(0));
 	}
 
 	@Test
-	void moveCardRejectsUnknownDirection() throws Exception {
+	void moveCardRejectsMissingDestination() throws Exception {
 		UUID cardId = UUID.fromString("11111111-1111-4111-8111-111111111131");
 
 		mockMvc.perform(post("/api/cards/" + cardId + "/move")
 				.contentType(APPLICATION_JSON)
-				.content("{\"direction\":\"up\"}"))
+				.content("{\"index\":0}"))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.detail").value("移動方向は左か右です。"));
+			.andExpect(jsonPath("$.detail").value("移動先を指定してください。"));
 
-		verify(boardRepository, never()).moveCard(any(), anyInt());
+		verify(boardRepository, never()).placeCard(any(), any(), anyInt());
 	}
 
 	@Test
 	void moveCardReturnsNotFoundWhenCardMissing() throws Exception {
 		UUID cardId = UUID.fromString("99999999-9999-4999-8999-999999999999");
-		when(boardRepository.moveCard(cardId, 1)).thenReturn(Optional.empty());
+		UUID listId = UUID.fromString("11111111-1111-4111-8111-111111111122");
+		when(boardRepository.placeCard(cardId, listId, 0)).thenReturn(Optional.empty());
 		when(boardRepository.cardExists(cardId)).thenReturn(false);
 
 		mockMvc.perform(post("/api/cards/" + cardId + "/move")
 				.contentType(APPLICATION_JSON)
-				.content("{\"direction\":\"right\"}"))
+				.content("{\"listId\":\"" + listId + "\",\"index\":0}"))
 			.andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.detail").value("カードが見つかりません。"));
 	}
 
 	@Test
-	void moveCardRejectsWhenNeighborMissing() throws Exception {
+	void moveCardReturnsNotFoundWhenListMissing() throws Exception {
 		UUID cardId = UUID.fromString("11111111-1111-4111-8111-111111111131");
-		when(boardRepository.moveCard(cardId, 1)).thenReturn(Optional.empty());
+		UUID listId = UUID.fromString("99999999-9999-4999-8999-999999999999");
+		when(boardRepository.placeCard(cardId, listId, 0)).thenReturn(Optional.empty());
 		when(boardRepository.cardExists(cardId)).thenReturn(true);
 
 		mockMvc.perform(post("/api/cards/" + cardId + "/move")
 				.contentType(APPLICATION_JSON)
-				.content("{\"direction\":\" right \"}"))
-			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.detail").value("その方向にはリストがありません。"));
+				.content("{\"listId\":\"" + listId + "\",\"index\":0}"))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.detail").value("リストが見つかりません。"));
 	}
 
 	private static BoardResponse sampleBoard() {

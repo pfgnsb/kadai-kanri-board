@@ -1,4 +1,6 @@
 package com.nsb.taskboard.board;
 
-public record MoveCardRequest(String direction) {
+import java.util.UUID;
+
+public record MoveCardRequest(UUID listId, Integer index) {
 }

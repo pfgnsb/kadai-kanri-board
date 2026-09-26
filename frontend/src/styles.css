@@ -107,28 +107,38 @@ body {
   padding: 10px 12px;
   box-shadow: 0 1px 0 rgba(9, 30, 66, 0.18);
   text-align: left;
-  cursor: pointer;
+  cursor: grab;
 }
 
-.card-move {
-  display: flex;
-  justify-content: flex-end;
-  gap: 4px;
-  margin-top: 8px;
+.card-origin {
+  display: none;
 }
 
-.card-move button {
-  border: 0;
-  background: #eef3f6;
-  border-radius: 6px;
-  cursor: pointer;
-  padding: 4px 8px;
-  color: var(--text);
+.card-placeholder {
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: rgba(9, 30, 66, 0.08);
+  border: 2px dashed rgba(9, 30, 66, 0.18);
+  flex-shrink: 0;
 }
 
-.card-move button:disabled {
-  opacity: 0.35;
-  cursor: default;
+.card-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  margin: 0;
+  pointer-events: none;
+  rotate: 3deg;
+  box-shadow: var(--shadow);
+  opacity: 0.96;
+  cursor: grabbing;
+}
+
+body.is-dragging,
+body.is-dragging .card {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .card-title {

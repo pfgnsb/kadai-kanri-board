@@ -1,19 +1,22 @@
 import { useEffect, useRef, useState } from "react";
+import { useCardDrag } from "../useCardDrag.js";
 import CardEditor from "./CardEditor.jsx";
 import ListColumn from "./ListColumn.jsx";
 
 export default function Board({
   board,
   actionError,
-  movingCardId,
   editingCard,
   onCreateList,
   onCreateCard,
   onOpenCard,
-  onMoveCard,
+  onPlaceCard,
   onSaveCard,
   onCloseEditor,
 }) {
+  const boardRef = useRef(null);
+  useCardDrag(boardRef, onPlaceCard);
+
   return (
     <>
       <header className="topbar">
@@ -21,16 +24,12 @@ export default function Board({
         <p className="topbar-note">追加や更新はサーバに残ります</p>
       </header>
       {actionError ? <p className="banner-error">{actionError}</p> : null}
-      <main className="board" aria-label="タスクボード">
-        {board.lists.map((list, index) => (
+      <main className="board" aria-label="タスクボード" ref={boardRef}>
+        {board.lists.map((list) => (
           <ListColumn
             key={list.id}
             list={list}
-            canMoveLeft={index > 0}
-            canMoveRight={index < board.lists.length - 1}
-            movingCardId={movingCardId}
             onOpenCard={onOpenCard}
-            onMoveCard={onMoveCard}
             onCreateCard={onCreateCard}
           />
         ))}
