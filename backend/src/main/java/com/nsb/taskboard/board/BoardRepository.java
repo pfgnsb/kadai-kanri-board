@@ -2,6 +2,7 @@ package com.nsb.taskboard.board;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -11,6 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.SqlParameterValue;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -134,6 +136,78 @@ public class BoardRepository {
 			return Optional.empty();
 		}
 		return Optional.of(created.get(0));
+	}
+
+	public Optional<CardResponse> updateCard(UUID cardId, String title, String description, String priority, LocalDate dueDate) {
+		List<CardResponse> updated = jdbcTemplate.query(
+			"""
+			UPDATE cards
+			SET title = ?, description = ?, priority = ?, due_date = ?, updated_at = CURRENT_TIMESTAMP
+			WHERE id = ?
+			RETURNING id, title, description, priority, due_date, position
+			""",
+			(rs, rowNum) -> new CardResponse(
+				rs.getObject("id", UUID.class),
+				rs.getString("title"),
+				rs.getString("description"),
+				rs.getString("priority"),
+				rs.getObject("due_date", LocalDate.class),
+				rs.getInt("position")
+			),
+			title,
+			description,
+			priority,
+			new SqlParameterValue(Types.DATE, dueDate),
+			cardId
+		);
+		if (updated.isEmpty()) {
+			return Optional.empty();
+		}
+		return Optional.of(updated.get(0));
+	}
+
+	public Optional<MoveCardResponse> moveCard(UUID cardId, int direction) {
+		List<MoveCardResponse> moved = jdbcTemplate.query(
+			"""
+			UPDATE cards AS card
+			SET list_id = neighbor.id,
+				position = COALESCE((
+					SELECT MAX(existing.position) FROM cards existing WHERE existing.list_id = neighbor.id
+				), -1) + 1,
+				updated_at = CURRENT_TIMESTAMP
+			FROM (
+				SELECT next_list.id
+				FROM cards current_card
+				JOIN lists current_list ON current_list.id = current_card.list_id
+				JOIN lists next_list ON next_list.board_id = current_list.board_id
+					AND next_list.position = current_list.position + ?
+				WHERE current_card.id = ?
+			) AS neighbor
+			WHERE card.id = ?
+			RETURNING card.id, card.list_id, card.position
+			""",
+			(rs, rowNum) -> new MoveCardResponse(
+				rs.getObject("id", UUID.class),
+				rs.getObject("list_id", UUID.class),
+				rs.getInt("position")
+			),
+			direction,
+			cardId,
+			cardId
+		);
+		if (moved.isEmpty()) {
+			return Optional.empty();
+		}
+		return Optional.of(moved.get(0));
+	}
+
+	public boolean cardExists(UUID cardId) {
+		Integer count = jdbcTemplate.queryForObject(
+			"SELECT COUNT(*) FROM cards WHERE id = ?",
+			Integer.class,
+			cardId
+		);
+		return count != null && count > 0;
 	}
 
 	private CardRow mapCard(ResultSet rs, int rowNum) throws SQLException {

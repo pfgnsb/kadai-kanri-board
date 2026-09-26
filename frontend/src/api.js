@@ -33,11 +33,23 @@ export function createCard(listId, title) {
   return postJson(`/api/lists/${listId}/cards`, { title }, "カードを追加できませんでした。");
 }
 
-async function postJson(path, body, fallback) {
+export function updateCard(cardId, fields) {
+  return sendJson("PUT", `/api/cards/${cardId}`, fields, "カードを更新できませんでした。");
+}
+
+export function moveCard(cardId, direction) {
+  return sendJson("POST", `/api/cards/${cardId}/move`, { direction }, "カードを移動できませんでした。");
+}
+
+function postJson(path, body, fallback) {
+  return sendJson("POST", path, body, fallback);
+}
+
+async function sendJson(method, path, body, fallback) {
   let response;
   try {
     response = await fetch(`${API_BASE}${path}`, {
-      method: "POST",
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
