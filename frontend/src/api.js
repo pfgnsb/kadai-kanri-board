@@ -24,3 +24,46 @@ export async function fetchBoard() {
 
   return response.json();
 }
+
+export function createList(title) {
+  return postJson("/api/lists", { title }, "リストを追加できませんでした。");
+}
+
+export function createCard(listId, title) {
+  return postJson(`/api/lists/${listId}/cards`, { title }, "カードを追加できませんでした。");
+}
+
+async function postJson(path, body, fallback) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    const error = new Error("API に接続できません。サーバが起動しているか確認してください。");
+    error.kind = "network";
+    throw error;
+  }
+
+  if (!response.ok) {
+    const error = new Error(await readErrorMessage(response, fallback));
+    error.kind = "http";
+    throw error;
+  }
+
+  return response.json();
+}
+
+async function readErrorMessage(response, fallback) {
+  try {
+    const body = await response.json();
+    if (body && typeof body.detail === "string" && body.detail) {
+      return body.detail;
+    }
+  } catch {
+    // 本文が JSON でないときは、呼び出し元の文言を使う。
+  }
+  return fallback;
+}
