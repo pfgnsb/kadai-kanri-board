@@ -68,12 +68,14 @@ public class BoardController {
 
 	@PostMapping("/cards/{cardId}/move")
 	public MoveCardResponse moveCard(@PathVariable UUID cardId, @RequestBody MoveCardRequest request) {
-		int direction = moveDirection(request.direction());
-		return boardRepository.moveCard(cardId, direction).orElseThrow(() -> {
+		if (request.listId() == null || request.index() == null || request.index() < 0) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "移動先を指定してください。");
+		}
+		return boardRepository.placeCard(cardId, request.listId(), request.index()).orElseThrow(() -> {
 			if (!boardRepository.cardExists(cardId)) {
 				return new ResponseStatusException(HttpStatus.NOT_FOUND, "カードが見つかりません。");
 			}
-			return new ResponseStatusException(HttpStatus.BAD_REQUEST, "その方向にはリストがありません。");
+			return new ResponseStatusException(HttpStatus.NOT_FOUND, "リストが見つかりません。");
 		});
 	}
 
@@ -109,17 +111,6 @@ public class BoardController {
 		} catch (DateTimeParseException exception) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "期限の日付が正しくありません。");
 		}
-	}
-
-	private static int moveDirection(String direction) {
-		String value = direction == null ? "" : direction.strip();
-		if ("left".equals(value)) {
-			return -1;
-		}
-		if ("right".equals(value)) {
-			return 1;
-		}
-		throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "移動方向は左か右です。");
 	}
 
 }

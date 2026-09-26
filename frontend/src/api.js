@@ -37,8 +37,8 @@ export function updateCard(cardId, fields) {
   return sendJson("PUT", `/api/cards/${cardId}`, fields, "カードを更新できませんでした。");
 }
 
-export function moveCard(cardId, direction) {
-  return sendJson("POST", `/api/cards/${cardId}/move`, { direction }, "カードを移動できませんでした。");
+export function moveCard(cardId, listId, index) {
+  return sendJson("POST", `/api/cards/${cardId}/move`, { listId, index }, "カードを移動できませんでした。");
 }
 
 function postJson(path, body, fallback) {
