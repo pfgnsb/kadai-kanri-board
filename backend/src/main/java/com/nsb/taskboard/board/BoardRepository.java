@@ -78,6 +78,64 @@ public class BoardRepository {
 		return Optional.of(new BoardResponse(board.id(), board.title(), listResponses));
 	}
 
+	public Optional<ListResponse> insertList(String title) {
+		UUID id = UUID.randomUUID();
+		List<ListResponse> created = jdbcTemplate.query(
+			"""
+			INSERT INTO lists (id, board_id, title, position)
+			SELECT ?, board.id, ?, COALESCE((
+				SELECT MAX(existing.position) FROM lists existing WHERE existing.board_id = board.id
+			), -1) + 1
+			FROM (
+				SELECT id FROM boards ORDER BY created_at LIMIT 1
+			) board
+			RETURNING id, title, position
+			""",
+			(rs, rowNum) -> new ListResponse(
+				rs.getObject("id", UUID.class),
+				rs.getString("title"),
+				rs.getInt("position"),
+				List.of()
+			),
+			id,
+			title
+		);
+		if (created.isEmpty()) {
+			return Optional.empty();
+		}
+		return Optional.of(created.get(0));
+	}
+
+	public Optional<CardResponse> insertCard(UUID listId, String title) {
+		UUID id = UUID.randomUUID();
+		List<CardResponse> created = jdbcTemplate.query(
+			"""
+			INSERT INTO cards (id, list_id, title, description, priority, due_date, position)
+			SELECT ?, list.id, ?, '', 'medium', NULL, COALESCE((
+				SELECT MAX(existing.position) FROM cards existing WHERE existing.list_id = list.id
+			), -1) + 1
+			FROM lists list
+			WHERE list.id = ?
+			RETURNING id, title, description, priority, due_date, position
+			""",
+			(rs, rowNum) -> new CardResponse(
+				rs.getObject("id", UUID.class),
+				rs.getString("title"),
+				rs.getString("description"),
+				rs.getString("priority"),
+				rs.getObject("due_date", LocalDate.class),
+				rs.getInt("position")
+			),
+			id,
+			title,
+			listId
+		);
+		if (created.isEmpty()) {
+			return Optional.empty();
+		}
+		return Optional.of(created.get(0));
+	}
+
 	private CardRow mapCard(ResultSet rs, int rowNum) throws SQLException {
 		return new CardRow(
 			rs.getObject("id", UUID.class),

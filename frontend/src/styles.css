@@ -179,3 +179,83 @@ body {
   color: #fff;
   font-size: 16px;
 }
+
+.add-card,
+.add-list-form {
+  margin-top: 8px;
+}
+
+.add-card textarea,
+.add-list-form input {
+  width: 100%;
+  border: 1px solid #d5dde3;
+  border-radius: 8px;
+  padding: 8px;
+  font: inherit;
+  resize: vertical;
+}
+
+.composer-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font: inherit;
+  background: #dce3e8;
+  color: var(--text);
+}
+
+.btn:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.btn-primary {
+  background: #1f6f8b;
+  color: #fff;
+}
+
+.ghost {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: var(--muted);
+}
+
+.ghost:hover {
+  background: #dce3e8;
+  color: var(--text);
+}
+
+.add-list {
+  flex: 0 0 280px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 10px;
+  color: #fff;
+}
+
+.add-list .ghost {
+  color: #fff;
+}
+
+.add-list .ghost:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.form-error {
+  margin: 8px 0 0;
+  color: #842029;
+  background: #f8d7da;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 13px;
+}

@@ -11,9 +11,16 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,6 +57,114 @@ class BoardControllerTest {
 
 		mockMvc.perform(get("/api/board"))
 			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void createListAppendsTrimmedTitle() throws Exception {
+		UUID listId = UUID.fromString("22222222-2222-4222-8222-222222222221");
+		when(boardRepository.insertList("レビュー")).thenReturn(Optional.of(
+			new ListResponse(listId, "レビュー", 3, List.of())
+		));
+
+		mockMvc.perform(post("/api/lists")
+				.contentType(APPLICATION_JSON)
+				.content("{\"title\":\"  レビュー  \"}"))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.id").value(listId.toString()))
+			.andExpect(jsonPath("$.title").value("レビュー"))
+			.andExpect(jsonPath("$.position").value(3))
+			.andExpect(jsonPath("$.cards", hasSize(0)));
+	}
+
+	@Test
+	void createListRejectsBlankTitle() throws Exception {
+		mockMvc.perform(post("/api/lists")
+				.contentType(APPLICATION_JSON)
+				.content("{\"title\":\"   \"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.detail").value("列の名前を入力してください。"));
+
+		verify(boardRepository, never()).insertList(anyString());
+	}
+
+	@Test
+	void createListRejectsTitleLongerThan30() throws Exception {
+		mockMvc.perform(post("/api/lists")
+				.contentType(APPLICATION_JSON)
+				.content("{\"title\":\"" + "あ".repeat(31) + "\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.detail").value("リスト名は30文字以内にしてください。"));
+
+		verify(boardRepository, never()).insertList(anyString());
+	}
+
+	@Test
+	void createListReturnsNotFoundWhenBoardMissing() throws Exception {
+		when(boardRepository.insertList("レビュー")).thenReturn(Optional.empty());
+
+		mockMvc.perform(post("/api/lists")
+				.contentType(APPLICATION_JSON)
+				.content("{\"title\":\"レビュー\"}"))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.detail").value("ボードが見つかりません。"));
+	}
+
+	@Test
+	void createCardAppendsWithMediumPriority() throws Exception {
+		UUID listId = UUID.fromString("11111111-1111-4111-8111-111111111121");
+		UUID cardId = UUID.fromString("33333333-3333-4333-8333-333333333331");
+		when(boardRepository.insertCard(listId, "資料を書く")).thenReturn(Optional.of(
+			new CardResponse(cardId, "資料を書く", "", "medium", null, 2)
+		));
+
+		mockMvc.perform(post("/api/lists/" + listId + "/cards")
+				.contentType(APPLICATION_JSON)
+				.content("{\"title\":\"資料を書く\"}"))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.id").value(cardId.toString()))
+			.andExpect(jsonPath("$.title").value("資料を書く"))
+			.andExpect(jsonPath("$.description").value(""))
+			.andExpect(jsonPath("$.priority").value("medium"))
+			.andExpect(jsonPath("$.dueDate").value(nullValue()))
+			.andExpect(jsonPath("$.position").value(2));
+	}
+
+	@Test
+	void createCardRejectsBlankTitle() throws Exception {
+		UUID listId = UUID.fromString("11111111-1111-4111-8111-111111111121");
+
+		mockMvc.perform(post("/api/lists/" + listId + "/cards")
+				.contentType(APPLICATION_JSON)
+				.content("{\"title\":\"\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.detail").value("タイトルを入力してください。"));
+
+		verify(boardRepository, never()).insertCard(any(), anyString());
+	}
+
+	@Test
+	void createCardRejectsTitleLongerThan80() throws Exception {
+		UUID listId = UUID.fromString("11111111-1111-4111-8111-111111111121");
+
+		mockMvc.perform(post("/api/lists/" + listId + "/cards")
+				.contentType(APPLICATION_JSON)
+				.content("{\"title\":\"" + "あ".repeat(81) + "\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.detail").value("タイトルは80文字以内にしてください。"));
+
+		verify(boardRepository, never()).insertCard(any(), anyString());
+	}
+
+	@Test
+	void createCardReturnsNotFoundWhenListMissing() throws Exception {
+		UUID listId = UUID.fromString("99999999-9999-4999-8999-999999999999");
+		when(boardRepository.insertCard(listId, "資料を書く")).thenReturn(Optional.empty());
+
+		mockMvc.perform(post("/api/lists/" + listId + "/cards")
+				.contentType(APPLICATION_JSON)
+				.content("{\"title\":\"資料を書く\"}"))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.detail").value("リストが見つかりません。"));
 	}
 
 	private static BoardResponse sampleBoard() {

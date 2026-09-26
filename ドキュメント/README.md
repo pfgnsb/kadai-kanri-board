@@ -7,8 +7,8 @@
 | 層 | 場所 | いま動くこと |
 |---|---|---|
 | 認識合わせ用モック | フォルダ直下の `index.html` | ブラウザの localStorage に保存する |
-| 画面 | `frontend/` | Vite で起動し、`GET /api/board` の結果を表示する |
-| API | `backend/` | `GET /api/health` と `GET /api/board` |
+| 画面 | `frontend/` | Vite で起動し、ボードの表示とリスト・カードの追加ができる |
+| API | `backend/` | `GET /api/health`、`GET /api/board`、`POST /api/lists`、`POST /api/lists/{listId}/cards` |
 | 保存 | Docker Compose の PostgreSQL 16 | ボード・リスト・カードの表 |
 
 ---
@@ -50,7 +50,7 @@
 
 ### 画面
 
-配置とボタンの役割は画面設計書です。先に形をつかむときは画面見取り図を見ます。HTMLモックアップ作成計画は、既存の `index.html` を認識合わせに使う約束です。`frontend/` の React 画面は、その設計のうちボードの読み取り表示まで進んでいます。
+配置とボタンの役割は画面設計書です。先に形をつかむときは画面見取り図を見ます。HTMLモックアップ作成計画は、既存の `index.html` を認識合わせに使う約束です。`frontend/` の React 画面は、その設計のうちボードの表示と、リスト・カードの追加まで進んでいます。
 
 ### 使い方
 
@@ -90,3 +90,4 @@ flowchart TD
 | 2026年9月22日 | API を Spring Boot（Java 21）へ切り替え、初期セットアップを追加 |
 | 2026年9月23日 | PostgreSQL を Docker Compose で起動し、Spring Boot から JDBC で接続する手順を追加 |
 | 2026年9月25日 | 実装で固定した版を技術スタックへ追記し、この一覧を入口として整理 |
+| 2026年9月26日 | リストとカードの追加 API と、画面の追加操作を実装した |

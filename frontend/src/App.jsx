@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchBoard } from "./api.js";
+import { createCard, createList, fetchBoard } from "./api.js";
 import Board from "./components/Board.jsx";
 
 export default function App() {
@@ -40,5 +40,29 @@ export default function App() {
     return <p className="status">{error}</p>;
   }
 
-  return <Board board={board} />;
+  async function handleCreateList(title) {
+    const list = await createList(title);
+    setBoard((current) => ({
+      ...current,
+      lists: [...current.lists, list],
+    }));
+  }
+
+  async function handleCreateCard(listId, title) {
+    const card = await createCard(listId, title);
+    setBoard((current) => ({
+      ...current,
+      lists: current.lists.map((list) =>
+        list.id === listId ? { ...list, cards: [...list.cards, card] } : list
+      ),
+    }));
+  }
+
+  return (
+    <Board
+      board={board}
+      onCreateList={handleCreateList}
+      onCreateCard={handleCreateCard}
+    />
+  );
 }
