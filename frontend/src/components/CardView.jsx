@@ -18,9 +18,9 @@ function isOverdue(dueDate) {
   return new Date(`${dueDate}T00:00:00`) < today;
 }
 
-export default function CardView({ card }) {
+export default function CardView({ card, canMoveLeft, canMoveRight, pending, onOpen, onMove }) {
   return (
-    <article className="card">
+    <article className="card" onClick={onOpen}>
       <p className="card-title">{card.title}</p>
       <div className="card-meta">
         <span className={`badge badge-${card.priority}`}>
@@ -33,6 +33,28 @@ export default function CardView({ card }) {
         ) : null}
       </div>
       {card.description ? <p className="card-preview">{card.description}</p> : null}
+      <div className="card-move">
+        <button
+          type="button"
+          disabled={!canMoveLeft || pending}
+          onClick={(event) => {
+            event.stopPropagation();
+            onMove("left");
+          }}
+        >
+          左へ
+        </button>
+        <button
+          type="button"
+          disabled={!canMoveRight || pending}
+          onClick={(event) => {
+            event.stopPropagation();
+            onMove("right");
+          }}
+        >
+          右へ
+        </button>
+      </div>
     </article>
   );
 }

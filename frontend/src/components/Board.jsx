@@ -1,19 +1,44 @@
 import { useEffect, useRef, useState } from "react";
+import CardEditor from "./CardEditor.jsx";
 import ListColumn from "./ListColumn.jsx";
 
-export default function Board({ board, onCreateList, onCreateCard }) {
+export default function Board({
+  board,
+  actionError,
+  movingCardId,
+  editingCard,
+  onCreateList,
+  onCreateCard,
+  onOpenCard,
+  onMoveCard,
+  onSaveCard,
+  onCloseEditor,
+}) {
   return (
     <>
       <header className="topbar">
         <h1 className="board-title">{board.title}</h1>
-        <p className="topbar-note">追加した内容はサーバに残ります</p>
+        <p className="topbar-note">追加や更新はサーバに残ります</p>
       </header>
+      {actionError ? <p className="banner-error">{actionError}</p> : null}
       <main className="board" aria-label="タスクボード">
-        {board.lists.map((list) => (
-          <ListColumn key={list.id} list={list} onCreateCard={onCreateCard} />
+        {board.lists.map((list, index) => (
+          <ListColumn
+            key={list.id}
+            list={list}
+            canMoveLeft={index > 0}
+            canMoveRight={index < board.lists.length - 1}
+            movingCardId={movingCardId}
+            onOpenCard={onOpenCard}
+            onMoveCard={onMoveCard}
+            onCreateCard={onCreateCard}
+          />
         ))}
         <AddList onCreate={onCreateList} />
       </main>
+      {editingCard ? (
+        <CardEditor card={editingCard} onSave={onSaveCard} onClose={onCloseEditor} />
+      ) : null}
     </>
   );
 }
