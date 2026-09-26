@@ -22,6 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -293,6 +294,44 @@ class BoardControllerTest {
 				.content("{\"listId\":\"" + listId + "\",\"index\":0}"))
 			.andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.detail").value("リストが見つかりません。"));
+	}
+
+	@Test
+	void deleteListReturnsNoContent() throws Exception {
+		UUID listId = UUID.fromString("11111111-1111-4111-8111-111111111122");
+		when(boardRepository.deleteList(listId)).thenReturn(true);
+
+		mockMvc.perform(delete("/api/lists/" + listId))
+			.andExpect(status().isNoContent());
+	}
+
+	@Test
+	void deleteListReturnsNotFoundWhenMissing() throws Exception {
+		UUID listId = UUID.fromString("99999999-9999-4999-8999-999999999999");
+		when(boardRepository.deleteList(listId)).thenReturn(false);
+
+		mockMvc.perform(delete("/api/lists/" + listId))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.detail").value("リストが見つかりません。"));
+	}
+
+	@Test
+	void deleteCardReturnsNoContent() throws Exception {
+		UUID cardId = UUID.fromString("11111111-1111-4111-8111-111111111131");
+		when(boardRepository.deleteCard(cardId)).thenReturn(true);
+
+		mockMvc.perform(delete("/api/cards/" + cardId))
+			.andExpect(status().isNoContent());
+	}
+
+	@Test
+	void deleteCardReturnsNotFoundWhenMissing() throws Exception {
+		UUID cardId = UUID.fromString("99999999-9999-4999-8999-999999999999");
+		when(boardRepository.deleteCard(cardId)).thenReturn(false);
+
+		mockMvc.perform(delete("/api/cards/" + cardId))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.detail").value("カードが見つかりません。"));
 	}
 
 	private static BoardResponse sampleBoard() {

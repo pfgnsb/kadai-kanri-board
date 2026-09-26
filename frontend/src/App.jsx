@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createCard, createList, fetchBoard, moveCard, updateCard } from "./api.js";
+import { createCard, createList, deleteCard, deleteList, fetchBoard, moveCard, updateCard } from "./api.js";
 import Board from "./components/Board.jsx";
 
 export default function App() {
@@ -7,6 +7,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [editingCard, setEditingCard] = useState(null);
+  const [confirm, setConfirm] = useState(null);
   const [actionError, setActionError] = useState("");
 
   useEffect(() => {
@@ -72,6 +73,57 @@ export default function App() {
     setEditingCard(null);
   }
 
+  function handleAskDeleteCard() {
+    setConfirm({
+      kind: "card",
+      id: editingCard.id,
+      message: `「${editingCard.title}」を削除しますか？`,
+      pending: false,
+    });
+  }
+
+  function handleAskDeleteList(list) {
+    setConfirm({
+      kind: "list",
+      id: list.id,
+      message: `「${list.title}」を削除しますか？中のカードも消えます。`,
+      pending: false,
+    });
+  }
+
+  async function handleConfirmYes() {
+    if (!confirm || confirm.pending) {
+      return;
+    }
+    const current = confirm;
+    setConfirm({ ...current, pending: true });
+    setActionError("");
+    try {
+      if (current.kind === "card") {
+        await deleteCard(current.id);
+        setBoard((boardState) => ({
+          ...boardState,
+          lists: boardState.lists.map((list) => ({
+            ...list,
+            cards: list.cards.filter((card) => card.id !== current.id),
+          })),
+        }));
+        setEditingCard(null);
+      } else {
+        await deleteList(current.id);
+        setBoard((boardState) => ({
+          ...boardState,
+          lists: boardState.lists.filter((list) => list.id !== current.id),
+        }));
+        setEditingCard((card) => (cardBelongsToList(board, card, current.id) ? null : card));
+      }
+      setConfirm(null);
+    } catch (err) {
+      setActionError(err.message || (current.kind === "card" ? "カードを削除できませんでした。" : "リストを削除できませんでした。"));
+      setConfirm(null);
+    }
+  }
+
   async function handlePlaceCard(cardId, listId, index) {
     const next = placeCardOnBoard(board, cardId, listId, index);
     if (!next) {
@@ -101,9 +153,22 @@ export default function App() {
       onOpenCard={setEditingCard}
       onPlaceCard={handlePlaceCard}
       onSaveCard={handleSaveCard}
+      onDeleteCard={handleAskDeleteCard}
+      onDeleteList={handleAskDeleteList}
+      confirm={confirm}
+      onConfirmYes={handleConfirmYes}
+      onConfirmNo={() => setConfirm(null)}
       onCloseEditor={() => setEditingCard(null)}
     />
   );
+}
+
+function cardBelongsToList(board, card, listId) {
+  if (!card) {
+    return false;
+  }
+  const list = board.lists.find((item) => item.id === listId);
+  return Boolean(list?.cards.some((item) => item.id === card.id));
 }
 
 function placeCardOnBoard(board, cardId, listId, index) {

@@ -41,6 +41,14 @@ export function moveCard(cardId, listId, index) {
   return sendJson("POST", `/api/cards/${cardId}/move`, { listId, index }, "カードを移動できませんでした。");
 }
 
+export function deleteList(listId) {
+  return sendEmpty("DELETE", `/api/lists/${listId}`, "リストを削除できませんでした。");
+}
+
+export function deleteCard(cardId) {
+  return sendEmpty("DELETE", `/api/cards/${cardId}`, "カードを削除できませんでした。");
+}
+
 function postJson(path, body, fallback) {
   return sendJson("POST", path, body, fallback);
 }
@@ -66,6 +74,23 @@ async function sendJson(method, path, body, fallback) {
   }
 
   return response.json();
+}
+
+async function sendEmpty(method, path, fallback) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, { method });
+  } catch {
+    const error = new Error("API に接続できません。サーバが起動しているか確認してください。");
+    error.kind = "network";
+    throw error;
+  }
+
+  if (!response.ok) {
+    const error = new Error(await readErrorMessage(response, fallback));
+    error.kind = "http";
+    throw error;
+  }
 }
 
 async function readErrorMessage(response, fallback) {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export default function CardEditor({ card, onSave, onClose }) {
+export default function CardEditor({ card, onSave, onDelete, onClose }) {
   const dialogRef = useRef(null);
   const titleRef = useRef(null);
   const [title, setTitle] = useState(card.title);
@@ -102,6 +102,9 @@ export default function CardEditor({ card, onSave, onClose }) {
           </button>
           <button type="button" className="btn" onClick={onClose} disabled={pending}>
             キャンセル
+          </button>
+          <button type="button" className="btn btn-danger" onClick={onDelete} disabled={pending}>
+            削除
           </button>
         </div>
       </form>
