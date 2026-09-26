@@ -107,7 +107,7 @@ function renderList(list, index) {
       ? `<p class="empty-hint">カードはまだありません</p>`
       : list.cards.map((card) => renderCard(list, card, index)).join("");
 
-  const composer = composingListId === list.id ? renderCardComposer(list.id) : `<button class="btn ghost" data-action="start-add-card" data-list-id="${list.id}">+ カードを追加</button>`;
+  const composer = composingListId === list.id ? renderCardComposer(list.id) : `<button class="btn ghost" data-action="start-add-card" data-list-id="${list.id}">タスク追加</button>`;
 
   return `
     <section class="list" data-list-id="${list.id}">

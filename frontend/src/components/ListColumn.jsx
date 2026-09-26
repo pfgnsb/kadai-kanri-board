@@ -62,7 +62,7 @@ function AddCard({ onCreate }) {
   if (!open) {
     return (
       <button type="button" className="btn ghost" onClick={() => setOpen(true)}>
-        + カードを追加
+        タスク追加
       </button>
     );
   }
