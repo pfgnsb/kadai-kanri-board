@@ -8,4 +8,7 @@ public record BoardResponse(
 	String title,
 	List<ListResponse> lists
 ) {
+	public BoardResponse {
+		lists = List.copyOf(lists);
+	}
 }

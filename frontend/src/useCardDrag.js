@@ -1,10 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent } from "react";
 
 const DRAG_THRESHOLD = 8;
 
 export function useCardDrag(boardRef, onPlace) {
-  const onPlaceRef = useRef(onPlace);
-  onPlaceRef.current = onPlace;
+  const placeCard = useEffectEvent(onPlace);
 
   useEffect(() => {
     const boardEl = boardRef.current;
@@ -144,7 +143,7 @@ export function useCardDrag(boardRef, onPlace) {
       boardEl.querySelector(".card-origin")?.classList.remove("card-origin");
 
       if (current.drop) {
-        onPlaceRef.current(current.cardId, current.drop.listId, current.drop.index);
+        placeCard(current.cardId, current.drop.listId, current.drop.index);
       }
     }
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+	<!-- Spring がコンストラクタへ渡す依存をフィールドに持つのは、このプロジェクトの標準である。 -->
+	<Match>
+		<Bug pattern="EI_EXPOSE_REP2"/>
+		<Or>
+			<Class name="com.nsb.taskboard.board.BoardController"/>
+			<Class name="com.nsb.taskboard.board.BoardRepository"/>
+			<Class name="com.nsb.taskboard.health.HealthController"/>
+		</Or>
+	</Match>
+	<!-- 応答の record が List を持つ。中身は応答を組み立てるときにコピーする。 -->
+	<Match>
+		<Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+		<Or>
+			<Class name="com.nsb.taskboard.board.BoardResponse"/>
+			<Class name="com.nsb.taskboard.board.ListResponse"/>
+		</Or>
+	</Match>
+</FindBugsFilter>
