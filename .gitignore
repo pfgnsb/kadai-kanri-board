@@ -13,3 +13,15 @@ frontend/.vite/
 .classpath
 .project
 .settings/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*.auto.tfvars
+*.tfvars
+tfplan
