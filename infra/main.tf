@@ -1,6 +1,6 @@
 # この段階で作るのは EC2 1 台だけである。
 # 画面と API は、あとでこの同じサーバに置く。RDS、S3、CloudFront はまだ作らない。
-# 外から入れるポートは、この PC からの 22（SSH）、5173（画面）、8080（API）だけである。
+# 外から入れるポートは、この PC からの 22（SSH）、80（nginx）、5173（画面）、8080（API）だけである。
 
 data "aws_vpc" "default" {
   default = true
@@ -52,6 +52,14 @@ resource "aws_security_group" "task_board" {
   }
 
   ingress {
+    description = "nginx from this PC"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_cidr]
+  }
+
+  ingress {
     description = "Frontend from this PC"
     from_port   = 5173
     to_port     = 5173
@@ -68,7 +76,7 @@ resource "aws_security_group" "task_board" {
   }
 
   # これはサーバから外へ出る向きである。SSM が AWS へ届くために残す。
-  # 外から入る接続は、上の 22、5173、8080 だけである。
+  # 外から入る接続は、上の 22、80、5173、8080 だけである。
   egress {
     description = "Outbound for SSM"
     from_port   = 0
