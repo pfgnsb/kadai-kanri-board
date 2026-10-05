@@ -3,3 +3,8 @@ variable "instance_type" {
   type        = string
   default     = "t4g.small"
 }
+
+variable "allowed_cidr" {
+  description = "入ってくる接続を許すアドレス。この PC の公開アドレスを /32 で書く。値は terraform.tfvars に置く。"
+  type        = string
+}

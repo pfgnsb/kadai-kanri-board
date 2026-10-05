@@ -1,6 +1,7 @@
 # この段階で作るのは EC2 1 台だけである。
 # 画面と API は、あとでこの同じサーバに置く。RDS、S3、CloudFront はまだ作らない。
-# 接続は SSM を使う。22 番は開けない。
+# 外から入れるポートは、この PC からの 5173（画面）と 8080（API）だけである。
+# 接続の確認は SSM を使う。22 番は開けない。
 
 data "aws_vpc" "default" {
   default = true
@@ -40,9 +41,27 @@ data "aws_ami" "amazon_linux_2023" {
 
 resource "aws_security_group" "task_board" {
   name        = "task-board-ec2"
-  description = "Task board EC2. No inbound. Connect with SSM."
+  description = "Task board EC2. Inbound is this PC only, on 5173 and 8080."
   vpc_id      = data.aws_vpc.default.id
 
+  ingress {
+    description = "Frontend from this PC"
+    from_port   = 5173
+    to_port     = 5173
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_cidr]
+  }
+
+  ingress {
+    description = "API from this PC"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_cidr]
+  }
+
+  # これはサーバから外へ出る向きである。SSM が AWS へ届くために残す。
+  # 外から入る接続は、上の 5173 と 8080 だけである。
   egress {
     description = "Outbound for SSM"
     from_port   = 0
