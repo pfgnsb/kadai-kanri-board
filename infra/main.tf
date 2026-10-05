@@ -1,7 +1,6 @@
 # この段階で作るのは EC2 1 台だけである。
 # 画面と API は、あとでこの同じサーバに置く。RDS、S3、CloudFront はまだ作らない。
-# 外から入れるポートは、この PC からの 5173（画面）と 8080（API）だけである。
-# 接続の確認は SSM を使う。22 番は開けない。
+# 外から入れるポートは、この PC からの 22（SSH）、5173（画面）、8080（API）だけである。
 
 data "aws_vpc" "default" {
   default = true
@@ -41,8 +40,16 @@ data "aws_ami" "amazon_linux_2023" {
 
 resource "aws_security_group" "task_board" {
   name        = "task-board-ec2"
-  description = "Task board EC2. Inbound is this PC only, on 5173 and 8080."
+  description = "Task board EC2. Inbound is this PC only, on 22, 5173, and 8080."
   vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    description = "SSH from this PC"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_cidr]
+  }
 
   ingress {
     description = "Frontend from this PC"
@@ -61,7 +68,7 @@ resource "aws_security_group" "task_board" {
   }
 
   # これはサーバから外へ出る向きである。SSM が AWS へ届くために残す。
-  # 外から入る接続は、上の 5173 と 8080 だけである。
+  # 外から入る接続は、上の 22、5173、8080 だけである。
   egress {
     description = "Outbound for SSM"
     from_port   = 0
@@ -102,12 +109,18 @@ resource "aws_iam_instance_profile" "task_board" {
   role = aws_iam_role.task_board.name
 }
 
+resource "aws_key_pair" "task_board" {
+  key_name   = "task-board-ec2"
+  public_key = file("${path.module}/keys/task-board.pub")
+}
+
 resource "aws_instance" "task_board" {
   ami                         = data.aws_ami.amazon_linux_2023.id
   instance_type               = var.instance_type
   subnet_id                   = sort(data.aws_subnets.default.ids)[0]
   vpc_security_group_ids      = [aws_security_group.task_board.id]
   iam_instance_profile        = aws_iam_instance_profile.task_board.name
+  key_name                    = aws_key_pair.task_board.key_name
   associate_public_ip_address = true
 
   credit_specification {
