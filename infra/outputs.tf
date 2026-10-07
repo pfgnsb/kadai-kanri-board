@@ -12,3 +12,13 @@ output "public_ip" {
   description = "自動で付く公開アドレス。インスタンスを止めると外れる。"
   value       = aws_instance.task_board.public_ip
 }
+
+output "db_endpoint" {
+  description = "EC2 から接続する RDS のホスト名。公開アドレスはない。"
+  value       = aws_db_instance.task_board.address
+}
+
+output "db_name" {
+  description = "RDS のデータベース名。"
+  value       = aws_db_instance.task_board.db_name
+}
