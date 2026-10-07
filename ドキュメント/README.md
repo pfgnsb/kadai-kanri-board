@@ -32,6 +32,8 @@
 | 11 | [Spring Bootバックエンド初期セットアップ.md](./Spring%20Bootバックエンド初期セットアップ.md) | JDK、Docker、`backend/` の起動と `GET /api/health` の確認 |
 | 12 | [操作手順書.md](./操作手順書.md) | モックの開き方、API の起動、基本の使い方 |
 | 13 | [AWSデプロイガイド.md](./AWSデプロイガイド.md) | EC2 と RDS に画面と API を載せる手順 |
+| 12 | [デプロイガイド.md](./デプロイガイド.md) | 手元の Windows で画面・API・PostgreSQL を決めたポートで起動する手順 |
+| 13 | [操作手順書.md](./操作手順書.md) | モックの開き方、API の起動、基本の使い方 |
 
 ---
 
@@ -47,7 +49,7 @@
 
 ### 技術と起動
 
-使うものと使わないものは技術スタックです。React、Vite、Node.js、Java、Spring Boot、Maven、PostgreSQL の版もここに書いてあります。API を手元で起動する手順の正は Spring Boot バックエンド初期セットアップです。
+使うものと使わないものは技術スタックです。React、Vite、Node.js、Java、Spring Boot、Maven、PostgreSQL の版もここに書いてあります。JDK と Docker の入れ方は Spring Boot バックエンド初期セットアップ、画面まで含めた起動手順の正はデプロイガイドです。
 
 ### 画面
 
@@ -70,12 +72,14 @@ flowchart TD
   er --> db[データベース設計]
   req --> stack[技術スタック]
   stack --> boot[Spring Boot 初期セットアップ]
+  boot --> deploy[デプロイガイド]
   req --> screen[画面設計書]
   screen --> sketch[画面見取り図]
   screen --> mock[HTMLモックアップ作成計画]
   screen --> howto[操作手順書]
   boot --> howto
   howto --> aws[AWSデプロイガイド]
+  deploy --> howto
 ```
 
 図は GitHub 向けの Mermaid です。コードブロックの言語名を mermaid にし、流れは `flowchart`、データの関係は `erDiagram` で書いています。GitHub で Markdown を開くと図として見られます。
@@ -95,3 +99,4 @@ flowchart TD
 | 2026年9月26日 | リストとカードの追加 API と、画面の追加操作を実装した |
 | 2026年9月26日 | カードの更新と、左右のリストへの移動を実装した |
 | 2026年10月7日 | EC2 と RDS に載せる手順を、AWSデプロイガイドにまとめた |
+| 2026年10月2日 | 手元で一式を起動する手順として、デプロイガイドを追加した |
