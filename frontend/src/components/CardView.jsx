@@ -40,9 +40,9 @@ export default function CardView({ card, listId, onOpen }) {
           優先度 {PRIORITY_LABEL[card.priority] ?? card.priority}
         </span>
         {card.dueDate ? (
-          <span className={`due${isOverdue(card.dueDate) ? " overdue" : ""}`}>
+          <span className={`due${isOverdue(card.dueDate) ? " overdue" : ""}${isDueSoon(card.dueDate) ? " due-soon" : ""}`}>
             {isDueSoon(card.dueDate) ? (
-              <span className="due-soon" aria-label="期限が近づいています">
+              <span className="due-soon-mark" aria-label="期限が近づいています">
                 ⚠
               </span>
             ) : null}
