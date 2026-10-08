@@ -12,10 +12,23 @@ function formatDueDate(dueDate) {
   return `${Number(year)}年${Number(month)}月${Number(day)}日`;
 }
 
+function dueDay(dueDate) {
+  return new Date(`${dueDate}T00:00:00`);
+}
+
 function isOverdue(dueDate) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return new Date(`${dueDate}T00:00:00`) < today;
+  return dueDay(dueDate) < today;
+}
+
+function isDueSoon(dueDate) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = dueDay(dueDate);
+  const lastSoonDay = new Date(today);
+  lastSoonDay.setDate(lastSoonDay.getDate() + 2);
+  return due >= today && due <= lastSoonDay;
 }
 
 export default function CardView({ card, listId, onOpen }) {
@@ -28,6 +41,11 @@ export default function CardView({ card, listId, onOpen }) {
         </span>
         {card.dueDate ? (
           <span className={`due${isOverdue(card.dueDate) ? " overdue" : ""}`}>
+            {isDueSoon(card.dueDate) ? (
+              <span className="due-soon" aria-label="期限が近づいています">
+                ⚠
+              </span>
+            ) : null}
             期限 {formatDueDate(card.dueDate)}
           </span>
         ) : null}

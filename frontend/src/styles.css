@@ -197,6 +197,10 @@ body.is-dragging .card {
   color: var(--muted);
 }
 
+.due-soon {
+  margin-right: 4px;
+}
+
 .due.overdue {
   color: var(--high);
   font-weight: 700;
