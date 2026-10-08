@@ -118,7 +118,7 @@ class BoardControllerTest {
 	void createCardAppendsWithMediumPriority() throws Exception {
 		UUID listId = UUID.fromString("11111111-1111-4111-8111-111111111121");
 		UUID cardId = UUID.fromString("33333333-3333-4333-8333-333333333331");
-		when(boardRepository.insertCard(listId, "資料を書く")).thenReturn(Optional.of(
+		when(boardRepository.insertCard(listId, "資料を書く", "", "medium", null)).thenReturn(Optional.of(
 			new CardResponse(cardId, "資料を書く", "", "medium", null, 2)
 		));
 
@@ -144,7 +144,7 @@ class BoardControllerTest {
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.detail").value("タイトルを入力してください。"));
 
-		verify(boardRepository, never()).insertCard(any(), anyString());
+		verify(boardRepository, never()).insertCard(any(), anyString(), anyString(), anyString(), any());
 	}
 
 	@Test
@@ -157,13 +157,44 @@ class BoardControllerTest {
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.detail").value("タイトルは80文字以内にしてください。"));
 
-		verify(boardRepository, never()).insertCard(any(), anyString());
+		verify(boardRepository, never()).insertCard(any(), anyString(), anyString(), anyString(), any());
+	}
+
+	@Test
+	void createCardSavesDescriptionPriorityAndDueDate() throws Exception {
+		UUID listId = UUID.fromString("11111111-1111-4111-8111-111111111121");
+		UUID cardId = UUID.fromString("33333333-3333-4333-8333-333333333332");
+		when(boardRepository.insertCard(listId, "資料を書く", "メモ", "high", LocalDate.parse("2026-10-20")))
+			.thenReturn(Optional.of(new CardResponse(cardId, "資料を書く", "メモ", "high", LocalDate.parse("2026-10-20"), 2)));
+
+		mockMvc.perform(post("/api/lists/" + listId + "/cards")
+				.contentType(APPLICATION_JSON)
+				.content("""
+					{"title":"資料を書く","description":" メモ ","priority":"high","dueDate":"2026-10-20"}
+					"""))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.description").value("メモ"))
+			.andExpect(jsonPath("$.priority").value("high"))
+			.andExpect(jsonPath("$.dueDate").value("2026-10-20"));
+	}
+
+	@Test
+	void createCardRejectsUnknownPriority() throws Exception {
+		UUID listId = UUID.fromString("11111111-1111-4111-8111-111111111121");
+
+		mockMvc.perform(post("/api/lists/" + listId + "/cards")
+				.contentType(APPLICATION_JSON)
+				.content("{\"title\":\"資料を書く\",\"priority\":\"urgent\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.detail").value("優先度は高・中・低から選んでください。"));
+
+		verify(boardRepository, never()).insertCard(any(), anyString(), anyString(), anyString(), any());
 	}
 
 	@Test
 	void createCardReturnsNotFoundWhenListMissing() throws Exception {
 		UUID listId = UUID.fromString("99999999-9999-4999-8999-999999999999");
-		when(boardRepository.insertCard(listId, "資料を書く")).thenReturn(Optional.empty());
+		when(boardRepository.insertCard(listId, "資料を書く", "", "medium", null)).thenReturn(Optional.empty());
 
 		mockMvc.perform(post("/api/lists/" + listId + "/cards")
 				.contentType(APPLICATION_JSON)

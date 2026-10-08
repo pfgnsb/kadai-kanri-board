@@ -20,7 +20,7 @@ export default function ListColumn({ list, onOpenCard, onCreateCard, onDeleteLis
         )}
       </div>
       <div className="add-card">
-        <AddCard onCreate={(title) => onCreateCard(list.id, title)} />
+        <AddCard onCreate={(fields) => onCreateCard(list.id, fields)} />
       </div>
     </section>
   );
@@ -29,6 +29,9 @@ export default function ListColumn({ list, onOpenCard, onCreateCard, onDeleteLis
 function AddCard({ onCreate }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("medium");
+  const [dueDate, setDueDate] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const inputRef = useRef(null);
@@ -42,6 +45,9 @@ function AddCard({ onCreate }) {
   function close() {
     setOpen(false);
     setTitle("");
+    setDescription("");
+    setPriority("medium");
+    setDueDate("");
     setError("");
   }
 
@@ -55,7 +61,12 @@ function AddCard({ onCreate }) {
     setPending(true);
     setError("");
     try {
-      await onCreate(trimmed);
+      await onCreate({
+        title: trimmed,
+        description: description.trim(),
+        priority,
+        dueDate,
+      });
       close();
     } catch (err) {
       setError(err.message || "カードを追加できませんでした。");
@@ -73,17 +84,49 @@ function AddCard({ onCreate }) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <textarea
-        ref={inputRef}
-        name="title"
-        rows={2}
-        maxLength={80}
-        placeholder="カードのタイトル"
-        aria-label="カードのタイトル"
-        value={title}
-        onChange={(event) => setTitle(event.target.value)}
-      />
+    <form className="add-card-form" onSubmit={handleSubmit}>
+      <label>
+        タイトル（必須）
+        <textarea
+          ref={inputRef}
+          name="title"
+          rows={2}
+          maxLength={80}
+          placeholder="カードのタイトル"
+          aria-label="カードのタイトル"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+        />
+      </label>
+      <label>
+        説明文
+        <textarea
+          name="description"
+          rows={3}
+          maxLength={500}
+          aria-label="説明文"
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+        />
+      </label>
+      <label>
+        優先度
+        <select name="priority" aria-label="優先度" value={priority} onChange={(event) => setPriority(event.target.value)}>
+          <option value="high">高</option>
+          <option value="medium">中</option>
+          <option value="low">低</option>
+        </select>
+      </label>
+      <label>
+        期限（任意）
+        <input
+          name="dueDate"
+          type="date"
+          aria-label="期限"
+          value={dueDate}
+          onChange={(event) => setDueDate(event.target.value)}
+        />
+      </label>
       {error ? <p className="form-error">{error}</p> : null}
       <div className="composer-actions">
         <button className="btn btn-primary" type="submit" disabled={pending}>
