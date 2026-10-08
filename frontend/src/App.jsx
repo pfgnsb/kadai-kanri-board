@@ -51,8 +51,8 @@ export default function App() {
     }));
   }
 
-  async function handleCreateCard(listId, title) {
-    const card = await createCard(listId, title);
+  async function handleCreateCard(listId, fields) {
+    const card = await createCard(listId, fields);
     setBoard((current) => ({
       ...current,
       lists: current.lists.map((list) =>

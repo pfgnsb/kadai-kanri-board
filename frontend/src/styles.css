@@ -232,7 +232,23 @@ body.is-dragging .card {
   margin-top: 8px;
 }
 
+.add-card-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.add-card-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .add-card textarea,
+.add-card select,
+.add-card input,
 .add-list-form input {
   width: 100%;
   border: 1px solid #d5dde3;

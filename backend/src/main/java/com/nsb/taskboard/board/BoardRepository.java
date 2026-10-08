@@ -109,12 +109,12 @@ public class BoardRepository {
 		return Optional.of(created.get(0));
 	}
 
-	public Optional<CardResponse> insertCard(UUID listId, String title) {
+	public Optional<CardResponse> insertCard(UUID listId, String title, String description, String priority, LocalDate dueDate) {
 		UUID id = UUID.randomUUID();
 		List<CardResponse> created = jdbcTemplate.query(
 			"""
 			INSERT INTO cards (id, list_id, title, description, priority, due_date, position)
-			SELECT ?, list.id, ?, '', 'medium', NULL, COALESCE((
+			SELECT ?, list.id, ?, ?, ?, ?, COALESCE((
 				SELECT MAX(existing.position) FROM cards existing WHERE existing.list_id = list.id
 			), -1) + 1
 			FROM lists list
@@ -131,6 +131,9 @@ public class BoardRepository {
 			),
 			id,
 			title,
+			description,
+			priority,
+			new SqlParameterValue(Types.DATE, dueDate),
 			listId
 		);
 		if (created.isEmpty()) {

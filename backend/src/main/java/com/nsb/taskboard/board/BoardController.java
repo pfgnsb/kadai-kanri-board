@@ -48,9 +48,15 @@ public class BoardController {
 
 	@PostMapping("/lists/{listId}/cards")
 	@ResponseStatus(HttpStatus.CREATED)
-	public CardResponse createCard(@PathVariable UUID listId, @RequestBody CreateTitleRequest request) {
-		String title = requiredTitle(request, CARD_TITLE_MAX, "タイトルを入力してください。", "タイトルは80文字以内にしてください。");
-		return boardRepository.insertCard(listId, title)
+	public CardResponse createCard(@PathVariable UUID listId, @RequestBody UpdateCardRequest request) {
+		String title = requiredText(request.title(), CARD_TITLE_MAX, "タイトルを入力してください。", "タイトルは80文字以内にしてください。");
+		String description = optionalText(request.description(), CARD_DESCRIPTION_MAX, "説明文は500文字以内にしてください。");
+		String priority = request.priority() == null || request.priority().isBlank() ? "medium" : request.priority().strip();
+		if (!PRIORITIES.contains(priority)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "優先度は高・中・低から選んでください。");
+		}
+		LocalDate dueDate = parseDueDate(request.dueDate());
+		return boardRepository.insertCard(listId, title, description, priority, dueDate)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "リストが見つかりません。"));
 	}
 

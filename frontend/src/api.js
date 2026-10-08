@@ -29,8 +29,8 @@ export function createList(title) {
   return postJson("/api/lists", { title }, "リストを追加できませんでした。");
 }
 
-export function createCard(listId, title) {
-  return postJson(`/api/lists/${listId}/cards`, { title }, "カードを追加できませんでした。");
+export function createCard(listId, fields) {
+  return postJson(`/api/lists/${listId}/cards`, fields, "カードを追加できませんでした。");
 }
 
 export function updateCard(cardId, fields) {
